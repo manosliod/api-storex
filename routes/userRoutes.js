@@ -15,7 +15,7 @@ router.post('/add', userController.createUser)
 router.use(authController.protectWithJWT)
 
 router.patch('/updateMyPassword', authController.updatePassword)
-router.route('/me').get(userController.getMe, userController.getUser).patch(userController.updateMe)
+router.route('/me').get(userController.getMyId, userController.fetchMe).patch(userController.updateMe)
 
 router
   .route('/')
@@ -27,6 +27,10 @@ router
   .get(authController.restrictTo('super-admin'), userController.getUser)
   .patch(authController.restrictTo('super-admin'), userController.updateUser)
   .delete(authController.restrictTo('super-admin'), userController.deleteUser)
+
+router.route('/:id/categories').get(authController.restrictTo('store-admin'), userController.getUserCategories)
+// .patch(authController.restrictTo('super-admin'), userController.updateUser)
+// .delete(authController.restrictTo('super-admin'), userController.deleteUser)
 
 router
   .route('/store/:storeId')

@@ -5,6 +5,7 @@ const User = require('../models/userModel')
 const catchAsync = require('../utils/catchAsync')
 const AppError = require('../utils/appError')
 const sendEmail = require('../utils/email')
+const userController = require('./userController')
 
 const signToken = id =>
   jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -73,8 +74,9 @@ exports.login = catchAsync(async (req, res, next) => {
     return next(new AppError('Incorrect email or password', 401))
   }
 
+  const categories = await userController.getUserCategories(user._id)
   // 3) If everything ok, send token to client
-  createSendToken(user, 200, res)
+  createSendToken({ ...user._doc, categories }, 200, res)
 })
 
 exports.logout = (req, res) => {
