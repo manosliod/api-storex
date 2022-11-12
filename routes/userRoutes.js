@@ -34,7 +34,10 @@ router.route('/:id/categories').get(authController.restrictTo('store-admin'), us
 
 router
   .route('/store/:storeId')
-  .get(authController.restrictTo('super-admin', 'store-admin', 'store-sub-admin'), userController.getUsersByStore)
+  .get(
+    authController.restrictTo('super-admin', 'store-admin', 'store-sub-admin', 'lead-tech', 'tech'),
+    userController.getUsersByStore
+  )
   .post(authController.restrictTo('super-admin', 'store-admin', 'store-sub-admin'), userController.addUserByStore)
 
 router

@@ -85,7 +85,8 @@ const fetchMe = (Model, popOptions) =>
       return next(new AppError('No document found with that ID', 404))
     }
 
-    const categories = await this.getUserCategories(doc._id)
+    let categories = []
+    if (doc.role === 'tech') categories = await this.getUserCategories(doc._id)
 
     res.status(200).json({
       status: 'success',
