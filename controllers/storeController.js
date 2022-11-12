@@ -32,8 +32,6 @@ const getStoreCategory = Model =>
 
 const addStoreCategory = Model =>
   catchAsync(async (req, res, next) => {
-    console.log(req.body)
-    console.log(req.params)
     const doc = await Model.create({ ...req.body, store: req.params.id })
 
     if (req.params.categoryId) {
@@ -112,8 +110,6 @@ const getStoreProduct = Model =>
 
 const addStoreProduct = Model =>
   catchAsync(async (req, res, next) => {
-    console.log(req.body)
-    console.log(req.params)
     const doc = await Model.create({ ...req.body, store: req.params.id })
 
     if (req.params.productId) {

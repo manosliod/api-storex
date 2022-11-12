@@ -1,9 +1,9 @@
+const mongoose = require('mongoose')
 const Product = require('../models/productModel')
 const Category = require('../models/categoryModel')
 const factory = require('./handlerFactory')
 const catchAsync = require('../utils/catchAsync')
 const APIFeatures = require('../utils/apiFeatures')
-const mongoose = require('mongoose')
 const AppError = require('../utils/appError')
 
 const getAll = Model =>
@@ -29,7 +29,6 @@ const getAll = Model =>
 
 const createOne = Model =>
   catchAsync(async (req, res, next) => {
-    console.log(req.body)
     let newBody
     let categoryId
     if (req.body.category) {
