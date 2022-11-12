@@ -6,7 +6,7 @@ const productSchema = new mongoose.Schema({
     required: [true, 'Please tell us your product name!']
   },
   serialNumber: {
-    type: String,
+    type: Number,
     unique: true,
     required: [true, 'Please provide a serial number']
   },
@@ -21,7 +21,8 @@ const productSchema = new mongoose.Schema({
     default: 'commercial'
   },
   price: {
-    type: Number
+    type: Number,
+    required: [true, 'You must provide price of product']
   },
   quantity: {
     type: Number,
