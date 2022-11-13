@@ -1,4 +1,5 @@
 const mongoose = require('mongoose')
+const Store = require('../models/storeModel')
 const Product = require('../models/productModel')
 const Category = require('../models/categoryModel')
 const factory = require('./handlerFactory')
@@ -15,9 +16,19 @@ const getAll = Model =>
       const category = await Category.findOne({ _id: req.query.category })
       doc = await Model.find({ _id: { $in: category.products } })
     } else if (req.query.store) {
-      filter = { store: req.params.store }
-      const features = new APIFeatures(Model.find(filter), req.query).filter().sort().limitFields().paginate()
-      doc = await features.query
+      filter = { store: req.query.store }
+      doc = await Model.find(filter)
+      if (req.query.inBranches && req.query.inBranches === 'true') {
+        const store = await Store.findOne({ _id: req.query.store })
+        const products = []
+        // eslint-disable-next-line no-restricted-syntax
+        for (const subStore of store.subStores) {
+          // eslint-disable-next-line no-await-in-loop
+          const prodDoc = await Model.find({ store: subStore }).populate('store', 'name address city')
+          if (prodDoc) products.push(...prodDoc)
+        }
+        Array.prototype.push.apply(doc, products)
+      }
     }
     // SEND RESPONSE
     res.status(200).json({
@@ -29,7 +40,7 @@ const getAll = Model =>
 
 const createOne = Model =>
   catchAsync(async (req, res, next) => {
-    let newBody
+    let newBody = req.body
     let categoryId
     if (req.body.category) {
       categoryId = req.body.category
@@ -37,6 +48,7 @@ const createOne = Model =>
       delete newBody.category
     }
     const doc = await Model.create(newBody)
+    console.log(newBody, 'newBody')
     await Model.findOneAndUpdate({ _id: doc._id }, { barcode: doc.serialNumber })
 
     if (categoryId)

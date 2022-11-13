@@ -50,15 +50,6 @@ const storeSchema = new mongoose.Schema(
   }
 )
 
-storeSchema.pre(/^find/, function (next) {
-  this.populate({
-    path: 'user',
-    select: '_id'
-  })
-
-  next()
-})
-
 const Store = mongoose.model('Store', storeSchema)
 
 module.exports = Store

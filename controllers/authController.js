@@ -6,6 +6,7 @@ const catchAsync = require('../utils/catchAsync')
 const AppError = require('../utils/appError')
 const sendEmail = require('../utils/email')
 const userController = require('./userController')
+const Store = require('../models/storeModel')
 
 const signToken = id =>
   jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -74,12 +75,19 @@ exports.login = catchAsync(async (req, res, next) => {
     return next(new AppError('Incorrect email or password', 401))
   }
 
+  let subStores = []
   let products = []
   let categories = []
   if (user.role === 'tech') categories = await userController.getUserCategories(user._id)
   if (user.role === 'tech') products = await userController.getUserProducts(user._id)
+  if (user.role === 'store-admin' || user.role === 'store-sub-admin') {
+    const store = await Store.findOne({ _id: user.store })
+    // eslint-disable-next-line prefer-destructuring
+    subStores = store.subStores
+  }
+
   // 3) If everything ok, send token to client
-  createSendToken({ ...user._doc, categories, products }, 200, res)
+  createSendToken({ ...user._doc, categories, products, subStores }, 200, res)
 })
 
 exports.logout = (req, res) => {

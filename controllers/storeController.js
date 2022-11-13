@@ -6,7 +6,50 @@ const Category = require('../models/categoryModel')
 const catchAsync = require('../utils/catchAsync')
 const factory = require('./handlerFactory')
 const AppError = require('../utils/appError')
-const { ObjectId } = require('mongoose/lib/types')
+
+const deleteFunction = async (Model, id) => {
+  const doc = await Model.findByIdAndDelete(id)
+  const users = await User.find({ store: id })
+  const products = await Product.find({ store: id })
+  const categories = await Category.find({ store: id })
+  // eslint-disable-next-line no-restricted-syntax
+  for (const user of users) {
+    // eslint-disable-next-line no-await-in-loop
+    await User.findByIdAndDelete(user._id)
+  }
+  // eslint-disable-next-line no-restricted-syntax
+  for (const product of products) {
+    // eslint-disable-next-line no-await-in-loop
+    await Product.findByIdAndDelete(product._id)
+  }
+  // eslint-disable-next-line no-restricted-syntax
+  for (const category of categories) {
+    // eslint-disable-next-line no-await-in-loop
+    await Category.findByIdAndDelete(category._id)
+  }
+  return doc
+}
+
+const deleteOne = Model =>
+  catchAsync(async (req, res, next) => {
+    const store = await Model.findOne({ _id: req.params.id })
+    if (store.subStores && store.subStores.length > 0) {
+      // eslint-disable-next-line no-restricted-syntax
+      for (const subStore of store.subStores) {
+        deleteFunction(Model, subStore)
+      }
+    }
+    const doc = deleteFunction(Model, req.params.id)
+
+    if (!doc) {
+      return next(new AppError('No document found with that ID', 404))
+    }
+
+    res.status(204).json({
+      status: 'success',
+      data: null
+    })
+  })
 
 const getStoreCategory = Model =>
   catchAsync(async (req, res, next) => {
@@ -169,7 +212,7 @@ const addStoreProduct = Model =>
 
     if (req.params.productId) {
       await Model.findById(req.params.productId, (err, category) => {
-        category.subcategories.push(ObjectId(doc._id))
+        category.subcategories.push(doc._id)
         category.save()
       })
     }
@@ -218,11 +261,90 @@ const daleteStoreProduct = Model =>
     })
   })
 
+const getSubStores = Model =>
+  catchAsync(async (req, res, next) => {
+    if (!req.query.id) {
+      return next(new AppError('Store ID missing', 404))
+    }
+    const query = Model.findById({ _id: req.query.id }).lean().populate('subStores')
+
+    const doc = await query
+
+    if (!doc) {
+      return next(new AppError('No document found with that ID', 404))
+    }
+
+    res.status(200).json({
+      status: 'success',
+      doc: doc.subStores
+    })
+  })
+
+const createOneSubStore = Model =>
+  catchAsync(async (req, res, next) => {
+    if (!req.params.id) {
+      return next(new AppError('Store ID missing', 404))
+    }
+    const doc = await Model.create(req.body)
+    await Model.findById(req.params.id, (err, store) => {
+      store.subStores.push(doc._id)
+      store.save()
+    })
+
+    if (!doc) {
+      return next(new AppError('No document found with that ID', 404))
+    }
+
+    res.status(200).json({
+      status: 'success',
+      doc
+    })
+  })
+
+const updateOneSubStore = Model =>
+  catchAsync(async (req, res, next) => {
+    if (!req.params.id) {
+      return next(new AppError('Store ID missing', 404))
+    }
+    const doc = await Model.findOneAndUpdate({ _id: req.params.subStoreId }, req.body, {
+      new: true,
+      runValidators: true
+    })
+
+    if (!doc) {
+      return next(new AppError('No document found with that ID', 404))
+    }
+
+    res.status(200).json({
+      status: 'success',
+      doc
+    })
+  })
+
+const deleteOneSubStore = Model =>
+  catchAsync(async (req, res, next) => {
+    const doc = deleteFunction(Model, req.params.subStoreId)
+
+    if (!doc) {
+      return next(new AppError('No document found with that ID', 404))
+    }
+
+    res.status(204).json({
+      status: 'success',
+      data: null
+    })
+  })
+
 exports.getAllStores = factory.getAll(Store)
 exports.getStore = factory.getOne(Store)
 exports.updateStore = factory.updateOne(Store)
 exports.createStore = factory.createOne(Store)
-exports.deleteStore = factory.deleteOne(Store)
+exports.deleteStore = deleteOne(Store)
+
+exports.getStoreSubStores = getSubStores(Store)
+exports.updateStoreSubStores = updateOneSubStore(Store)
+exports.createStoreSubStores = createOneSubStore(Store)
+exports.deleteStoreSubStores = deleteOneSubStore(Store)
 
 exports.getStoreCategory = getStoreCategory(Category)
 exports.addStoreCategory = addStoreCategory(Category)

@@ -1,4 +1,5 @@
 const User = require('../models/userModel')
+const Store = require('../models/storeModel')
 const Category = require('../models/categoryModel')
 const catchAsync = require('../utils/catchAsync')
 const AppError = require('../utils/appError')
@@ -95,17 +96,24 @@ const fetchMe = (Model, popOptions) =>
       return next(new AppError('No document found with that ID', 404))
     }
 
+    let subStores = []
     let products = []
     let categories = []
     if (doc.role === 'tech') categories = await this.getUserCategories(doc._id)
     if (doc.role === 'tech') products = await this.getUserProducts(doc._id)
+    if (doc.role === 'store-admin' || doc.role === 'store-sub-admin') {
+      const store = await Store.findOne({ _id: doc.store })
+      // eslint-disable-next-line prefer-destructuring
+      subStores = store.subStores
+    }
 
     res.status(200).json({
       status: 'success',
       doc: {
         ...doc._doc,
         categories,
-        products
+        products,
+        subStores
       }
     })
   })
