@@ -40,6 +40,7 @@ exports.deleteMe = catchAsync(async (req, res, next) => {
 })
 
 async function recursive(subcategories, products, doc) {
+  if (!doc) return [subcategories, products, doc]
   // const doc = await Category.findById(id, '_id subcategories products')
   if (doc.subcategories === undefined || doc.subcategories.length === 0) {
     subcategories.push(doc._id)
@@ -67,12 +68,21 @@ async function recursive(subcategories, products, doc) {
 
 exports.getUserCategories = async id => {
   // To allow for nested GET reviews on tour (hack)
-  let doc1 = await Category.find({ user: id }, '_id subcategories products')
-  doc1 = doc1[0]
+  const doc1 = await Category.findOne({ user: id }, '_id subcategories products')
   const [subcategories] = await recursive([], [], doc1)
-  subcategories.push(doc1._id)
+  if (doc1) subcategories.push(doc1._id)
 
   return subcategories
+}
+
+exports.getUserProducts = async id => {
+  // To allow for nested GET reviews on tour (hack)
+  const doc1 = await Category.findOne({ user: id }, '_id subcategories products')
+  // eslint-disable-next-line no-unused-vars
+  const [subcategories, products] = await recursive([], [], doc1)
+  if (doc1) products.push(...doc1.products)
+
+  return products
 }
 
 const fetchMe = (Model, popOptions) =>
@@ -85,14 +95,17 @@ const fetchMe = (Model, popOptions) =>
       return next(new AppError('No document found with that ID', 404))
     }
 
+    let products = []
     let categories = []
     if (doc.role === 'tech') categories = await this.getUserCategories(doc._id)
+    if (doc.role === 'tech') products = await this.getUserProducts(doc._id)
 
     res.status(200).json({
       status: 'success',
       doc: {
         ...doc._doc,
-        categories
+        categories,
+        products
       }
     })
   })

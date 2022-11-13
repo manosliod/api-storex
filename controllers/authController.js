@@ -74,10 +74,12 @@ exports.login = catchAsync(async (req, res, next) => {
     return next(new AppError('Incorrect email or password', 401))
   }
 
+  let products = []
   let categories = []
   if (user.role === 'tech') categories = await userController.getUserCategories(user._id)
+  if (user.role === 'tech') products = await userController.getUserProducts(user._id)
   // 3) If everything ok, send token to client
-  createSendToken({ ...user._doc, categories }, 200, res)
+  createSendToken({ ...user._doc, categories, products }, 200, res)
 })
 
 exports.logout = (req, res) => {
