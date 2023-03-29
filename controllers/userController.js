@@ -103,8 +103,10 @@ const fetchMe = (Model, popOptions) =>
     if (doc.role === 'tech') products = await this.getUserProducts(doc._id)
     if (doc.role === 'store-admin' || doc.role === 'store-sub-admin') {
       const store = await Store.findOne({ _id: doc.store })
-      // eslint-disable-next-line prefer-destructuring
-      subStores = store.subStores
+      if (typeof store === 'object' && store !== null && !Array.isArray(store) && Object.keys(store.subStores).length) {
+        // eslint-disable-next-line prefer-destructuring
+        subStores = store.subStores
+      }
     }
 
     res.status(200).json({

@@ -82,8 +82,10 @@ exports.login = catchAsync(async (req, res, next) => {
   if (user.role === 'tech') products = await userController.getUserProducts(user._id)
   if (user.role === 'store-admin' || user.role === 'store-sub-admin') {
     const store = await Store.findOne({ _id: user.store })
-    // eslint-disable-next-line prefer-destructuring
-    subStores = store.subStores
+    if (typeof store === 'object' && store !== null && !Array.isArray(store) && Object.keys(store.subStores).length) {
+      // eslint-disable-next-line prefer-destructuring
+      subStores = store.subStores
+    }
   }
 
   // 3) If everything ok, send token to client
