@@ -4,13 +4,13 @@ const authController = require('../controllers/authController')
 
 const router = express.Router()
 
+router.post('/register', authController.protect, userController.createUser)
 router.post('/signup', authController.protect, authController.signup)
 router.post('/login', authController.protect, authController.login)
-router.get('/logout', authController.protectWithJWT, authController.logout)
 
-router.post('/forgotPassword', authController.forgotPassword)
-router.patch('/resetPassword/:token', authController.resetPassword)
-router.post('/add', userController.createUser)
+router.get('/logout', authController.protectWithJWT, authController.logout)
+router.post('/forgotPassword', authController.protect, authController.forgotPassword)
+router.patch('/resetPassword/:token', authController.protect, authController.resetPassword)
 
 router.use(authController.protectWithJWT)
 
